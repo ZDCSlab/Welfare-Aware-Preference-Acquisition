@@ -1,0 +1,124 @@
+diff --git a/src/llamafactory/data/collator.py b/src/llamafactory/data/collator.py
+index 97b37a9c..66bd65c2 100644
+--- a/src/llamafactory/data/collator.py
++++ b/src/llamafactory/data/collator.py
+@@ -583,7 +583,12 @@ class PairwiseDataCollatorWithPadding(MultiModalDataCollatorForSeq2Seq):
+                 }
+                 concatenated_features.append(target_feature)
+ 
+-        return super().__call__(concatenated_features)
++        batch = super().__call__(concatenated_features)
++        if any("preference_probability" in feature for feature in features):
++            batch["preference_probability"] = torch.tensor(
++                [feature["preference_probability"] for feature in features], dtype=torch.float32
++            )
++        return batch
+ 
+ 
+ @dataclass
+diff --git a/src/llamafactory/data/converter.py b/src/llamafactory/data/converter.py
+index ad49dede..30d4933e 100644
+--- a/src/llamafactory/data/converter.py
++++ b/src/llamafactory/data/converter.py
+@@ -128,6 +128,8 @@ class AlpacaDatasetConverter(DatasetConverter):
+             "_videos": self._find_medias(example[self.dataset_attr.videos]) if self.dataset_attr.videos else None,
+             "_audios": self._find_medias(example[self.dataset_attr.audios]) if self.dataset_attr.audios else None,
+         }
++        if self.dataset_attr.preference_probability:
++            output["_preference_probability"] = float(example[self.dataset_attr.preference_probability])
+         return output
+ 
+ 
+diff --git a/src/llamafactory/data/parser.py b/src/llamafactory/data/parser.py
+index 5209da64..98ad6825 100644
+--- a/src/llamafactory/data/parser.py
++++ b/src/llamafactory/data/parser.py
+@@ -46,6 +46,7 @@ class DatasetAttr:
+     # dpo columns
+     chosen: str | None = None
+     rejected: str | None = None
++    preference_probability: str | None = None
+     kto_tag: str | None = None
+     # alpaca columns
+     prompt: str | None = "instruction"
+@@ -79,7 +80,7 @@ class DatasetAttr:
+ 
+         if "columns" in attr:
+             column_names = ["prompt", "query", "response", "history", "messages", "system", "tools"]
+-            column_names += ["images", "videos", "audios", "chosen", "rejected", "kto_tag"]
++            column_names += ["images", "videos", "audios", "chosen", "rejected", "kto_tag", "preference_probability"]
+             for column_name in column_names:
+                 self.set_attr(column_name, attr["columns"])
+ 
+diff --git a/src/llamafactory/data/processor/pairwise.py b/src/llamafactory/data/processor/pairwise.py
+index 94101deb..18303210 100644
+--- a/src/llamafactory/data/processor/pairwise.py
++++ b/src/llamafactory/data/processor/pairwise.py
+@@ -87,6 +87,8 @@ class PairwiseDatasetProcessor(DatasetProcessor):
+                 videos=examples["_videos"][i] or [],
+                 audios=examples["_audios"][i] or [],
+             )
++            if "_preference_probability" in examples:
++                model_inputs["preference_probability"].append(examples["_preference_probability"][i])
+             model_inputs["chosen_input_ids"].append(chosen_input_ids)
+             model_inputs["chosen_attention_mask"].append([1] * len(chosen_input_ids))
+             model_inputs["chosen_labels"].append(chosen_labels)
+diff --git a/src/llamafactory/hparams/finetuning_args.py b/src/llamafactory/hparams/finetuning_args.py
+index f4bd4deb..2b7a590f 100644
+--- a/src/llamafactory/hparams/finetuning_args.py
++++ b/src/llamafactory/hparams/finetuning_args.py
+@@ -184,6 +184,10 @@ class RLHFArguments:
+         default="sigmoid",
+         metadata={"help": "The type of DPO loss to use."},
+     )
++    dpo_soft_labels: bool = field(
++        default=False,
++        metadata={"help": "Use per-pair preference_probability targets with sigmoid DPO."},
++    )
+     dpo_label_smoothing: float = field(
+         default=0.0,
+         metadata={"help": "The robust DPO label smoothing parameter in cDPO that should be between 0 and 0.5."},
+@@ -590,6 +594,11 @@ class FinetuningArguments(
+         self.additional_target: list[str] | None = split_arg(self.additional_target)
+         self.galore_target: list[str] = split_arg(self.galore_target)
+         self.apollo_target: list[str] = split_arg(self.apollo_target)
++        if self.dpo_soft_labels and (
++            self.stage != "dpo" or self.pref_loss != "sigmoid" or self.dpo_label_smoothing != 0
++            or self.pref_ftx != 0 or self.pref_bco_weight != 0 or self.ld_alpha is not None
++        ):
++            raise ValueError("Soft labels require plain sigmoid DPO without smoothing, FTX, BCO or LD-DPO.")
+         self.use_ref_model = self.stage == "dpo" and self.pref_loss not in ["orpo", "simpo"]
+ 
+         assert self.finetuning_type in ["lora", "oft", "freeze", "full"], "Invalid fine-tuning method."
+diff --git a/src/llamafactory/train/dpo/trainer.py b/src/llamafactory/train/dpo/trainer.py
+index 5b800a72..4d9cc9f1 100644
+--- a/src/llamafactory/train/dpo/trainer.py
++++ b/src/llamafactory/train/dpo/trainer.py
+@@ -283,6 +283,10 @@ class CustomDPOTrainer(DPOTrainer):
+         r"""Compute the DPO loss and other metrics for the given batch of inputs for train or test."""
+         metrics = {}
+ 
++        batch = dict(batch)
++        probability = batch.pop("preference_probability", None)
++        if self.finetuning_args.dpo_soft_labels != (probability is not None):
++            raise ValueError("dpo_soft_labels and preference_probability must be supplied together.")
+         model_output = self.concatenated_forward(model, batch)
+         policy_chosen_logps = model_output["chosen_logps"]
+         policy_rejected_logps = model_output["rejected_logps"]
+@@ -297,6 +301,16 @@ class CustomDPOTrainer(DPOTrainer):
+             reference_chosen_logps,
+             reference_rejected_logps,
+         )
++        if probability is not None:
++            margin = self.beta * (
++                (policy_chosen_logps - policy_rejected_logps)
++                - (reference_chosen_logps - reference_rejected_logps)
++            )
++            probability = probability.to(device=margin.device, dtype=margin.dtype)
++            if (probability.shape != margin.shape or not torch.isfinite(probability).all()
++                or ((probability < 0) | (probability > 1)).any()):
++                raise ValueError("Invalid per-pair preference probabilities.")
++            losses = -probability * F.logsigmoid(margin) - (1 - probability) * F.logsigmoid(-margin)
+         sft_loss = -policy_chosen_logps_avg
+         if self.ftx_gamma > 1e-6:
+             losses += self.ftx_gamma * sft_loss

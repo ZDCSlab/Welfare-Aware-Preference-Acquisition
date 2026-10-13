@@ -1,0 +1,9 @@
+inputs: data/processed/roleplay/north_america/acquisition/inputs.parquet
+output: outputs/labelling/target.parquet
+prompt_template: configs/prompts/target_pairwise.yaml
+model:
+  id: target
+  backend: transformers
+  model_path: models/Qwen3-4B-Instruct-2507
+  template: qwen_nothink
+  dtype: bfloat16

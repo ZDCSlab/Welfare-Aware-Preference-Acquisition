@@ -1,0 +1,12 @@
+inputs: data/processed/opinionqa/west/acquisition/inputs.parquet
+evidence: outputs/opinionqa/west/evidence.parquet
+labels: data/processed/opinionqa/west/labels/acquisition.parquet
+target_file: outputs/opinionqa/west/target.json
+budget_fraction: 0.2
+seed: 42
+welfare:
+  gamma: 2
+  rho: -5
+  epsilon: 0.5
+preferences: false
+output: outputs/opinionqa/west/joint

@@ -1,0 +1,9 @@
+inputs: data/processed/opinionqa/west/acquisition/inputs.parquet
+output: outputs/opinionqa/west/labelling/target.parquet
+prompt_template: configs/prompts/target_categorical.yaml
+model:
+  id: target
+  backend: transformers
+  model_path: models/Qwen3-4B-Instruct-2507
+  template: qwen_nothink
+  dtype: bfloat16

@@ -1,0 +1,12 @@
+inputs: data/processed/opinionqa/west/acquisition/inputs.parquet
+predictions:
+- outputs/opinionqa/west/labelling/target.parquet
+- outputs/opinionqa/west/labelling/reference_qwen.parquet
+- outputs/opinionqa/west/labelling/reference_glm.parquet
+- outputs/opinionqa/west/labelling/reference_deepseek.parquet
+target: target
+references:
+- reference_qwen
+- reference_glm
+- reference_deepseek
+output: outputs/opinionqa/west/evidence.parquet

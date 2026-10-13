@@ -1,0 +1,12 @@
+inputs: data/processed/roleplay/north_america/acquisition/inputs.parquet
+predictions:
+- outputs/labelling/target.parquet
+- outputs/labelling/reference_qwen.parquet
+- outputs/labelling/reference_glm.parquet
+- outputs/labelling/reference_deepseek.parquet
+target: target
+references:
+- reference_qwen
+- reference_glm
+- reference_deepseek
+output: outputs/evidence.parquet

@@ -1,0 +1,17 @@
+inputs: data/processed/roleplay/north_america/acquisition/inputs.parquet
+output: outputs/labelling/reference_deepseek.parquet
+prompt_template: configs/prompts/reference_pairwise.yaml
+retries: 3
+model:
+  id: reference_deepseek
+  backend: openai
+  model_name: deepseek-v4-flash
+  base_url: https://api.deepseek.com
+  api_key_env: DEEPSEEK_API_KEY
+  interface: responses
+request:
+  temperature: 0
+  max_output_tokens: 64
+  reasoning:
+    effort: none
+  tools: []

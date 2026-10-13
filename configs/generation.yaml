@@ -1,0 +1,11 @@
+inputs: data/processed/roleplay/north_america/test_seen_personas/inputs.parquet
+model:
+  model_path: models/Qwen3-4B-Instruct-2507
+  adapter_path: checkpoints/wapa
+  template: qwen_nothink
+  dtype: bfloat16
+seed: 42
+decoding:
+  temperature: 0
+  max_new_tokens: 1024
+output: outputs/generation/wapa.parquet

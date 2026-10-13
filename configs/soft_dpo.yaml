@@ -1,0 +1,23 @@
+dataset_dir: outputs/roleplay/north_america/joint/wapa/preferences
+base_model: models/Qwen3-4B-Instruct-2507
+checkpoint_output: checkpoints/wapa
+output: outputs/training/wapa
+seed: 42
+parameters:
+  template: qwen3_nothink
+  finetuning_type: lora
+  lora_target: all
+  lora_rank: 16
+  lora_alpha: 32
+  cutoff_len: 2048
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 16
+  learning_rate: 5.0e-06
+  num_train_epochs: 3
+  pref_beta: 0.1
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.1
+  bf16: true
+  logging_steps: 10
+  save_strategy: epoch
+  report_to: none

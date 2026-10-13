@@ -1,0 +1,17 @@
+inputs: data/processed/opinionqa/west/acquisition/inputs.parquet
+output: outputs/opinionqa/west/labelling/reference_deepseek.parquet
+prompt_template: configs/prompts/reference_categorical.yaml
+retries: 3
+model:
+  id: reference_deepseek
+  backend: openai
+  model_name: deepseek-v4-flash
+  base_url: https://api.deepseek.com
+  api_key_env: DEEPSEEK_API_KEY
+  interface: responses
+request:
+  temperature: 0
+  max_output_tokens: 256
+  reasoning:
+    effort: none
+  tools: []

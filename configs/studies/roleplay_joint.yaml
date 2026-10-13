@@ -1,0 +1,12 @@
+inputs: data/processed/roleplay/north_america/acquisition/inputs.parquet
+evidence: outputs/evidence.parquet
+labels: data/processed/roleplay/north_america/labels/acquisition.parquet
+target_file: outputs/target.json
+budget_fraction: 0.2
+seed: 42
+welfare:
+  gamma: 2
+  rho: -5
+  epsilon: 0.5
+preferences: true
+output: outputs/roleplay/north_america/joint

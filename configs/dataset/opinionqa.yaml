@@ -1,0 +1,12 @@
+benchmark_id: opinionqa
+task_type: categorical_choice
+seed: 42
+source_repository: ZDCSlab/Group-Adaptive-Elicitation
+source_revision: 643d40f4ad71ee01b8023417e2d8396eab105f54
+raw_root: data/raw/opinionqa
+output: data/processed/opinionqa
+source_users: {midwest: 895, northeast: 603, south: 1471, west: 897}
+users: {midwest: 895, northeast: 603, south: 735, west: 897}
+questions: 30
+option_order: source
+stages: [dataset, evidence, acquisition]

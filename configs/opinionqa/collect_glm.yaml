@@ -1,0 +1,16 @@
+inputs: data/processed/opinionqa/west/acquisition/inputs.parquet
+output: outputs/opinionqa/west/labelling/reference_glm.parquet
+prompt_template: configs/prompts/reference_categorical.yaml
+retries: 3
+model:
+  id: reference_glm
+  backend: openai
+  model_name: glm-5.2
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  api_key_env: DASHSCOPE_API_KEY
+  interface: chat_completions
+request:
+  temperature: 0
+  max_completion_tokens: 256
+  extra_body:
+    enable_thinking: false

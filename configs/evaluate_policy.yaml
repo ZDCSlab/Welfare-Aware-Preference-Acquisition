@@ -1,0 +1,4 @@
+evidence: outputs/evaluation/wapa_probabilities.parquet
+labels: data/processed/roleplay/north_america/labels/test_seen_personas.parquet
+target_group: []
+output: outputs/metrics/wapa_seen.json
