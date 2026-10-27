@@ -163,16 +163,12 @@ Use distinct output paths for each dataset, method and setting. Additional detai
 
 ## Citation
 
-The arXiv identifier and URL below are placeholders and will be updated when available.
-
 ```bibtex
-@misc{ding2026wapa,
-  title         = {Who Should We Listen to More? Welfare-Aware Preference Acquisition for Pluralistic Alignment},
-  author        = {Ruomeng Ding and Tianwei Gao and Lianrui Geng and Mohit Bansal and Zhun Deng},
-  year          = {2026},
-  eprint        = {TODO_ARXIV_ID},
-  archivePrefix = {arXiv},
-  url           = {https://arxiv.org/abs/TODO_ARXIV_ID}
+@article{ding2026should,
+  title={Who Should We Listen to More? Welfare-Aware Preference Acquisition for Pluralistic Alignment},
+  author={Ding, Ruomeng and Gao, Tianwei and Geng, Lianrui and Bansal, Mohit and Deng, Zhun},
+  journal={arXiv preprint arXiv:2610.19035},
+  year={2026}
 }
 ```
 
